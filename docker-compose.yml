@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: be_project_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+  backend:
+    build: ./backend
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --reload
+    volumes: ["./backend:/app"]
+    ports: ["8000:8000"]
+    environment:
+      USE_SQLITE: "True"
+      SECRET_KEY: dev
+      DEBUG: "True"
+    depends_on: [db, redis]
+  frontend:
+    build: ./frontend
+    ports: ["5173:80"]
+    depends_on: [backend]
+volumes:
+  pgdata:

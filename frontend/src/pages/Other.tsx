@@ -1,0 +1,3 @@
+export function Submissions(){ return <div><h1 className="text-2xl font-bold">Submissions</h1><p className="text-sm text-gray-500 mt-4">Submit draft → Submitted → Under Review → Approved → Locked workflow with version history.</p></div>}
+export function Reviews(){ return <div><h1 className="text-2xl font-bold">Reviews & Marks</h1><p className="text-sm text-gray-500 mt-4">Reviewer enters criterion-wise marks, validates max marks, finalizes. CO/PO attainment auto-calculated.</p></div>}
+export function Documents(){ return <div><h1 className="text-2xl font-bold">Documents</h1><p className="text-sm text-gray-500 mt-4">Versioned secure upload: synopsis, report, UML, paper, certificates, PPT, source.</p></div>}

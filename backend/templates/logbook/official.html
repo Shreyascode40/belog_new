@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@page { size: A4; margin: 15mm 12mm 18mm 12mm; @top-center { content: none; } @bottom-center { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #666; } @bottom-right { content: "Generated on {{ generated_on }}  v{{ version }}"; font-size: 7pt; color: #888; } }
+body { font-family: "Helvetica", Arial, sans-serif; font-size: 9pt; line-height: 1.35; color: #111; }
+.header-table { width: 100%; border: 1.5px solid #000; border-collapse: collapse; margin-bottom: 0; }
+.header-table td { border: 1px solid #000; padding: 4px 6px; vertical-align: middle; }
+.header-logo { width: 18%; text-align: center; font-size: 7pt; color: #555; }
+.header-center { text-align: center; font-weight: bold; font-size: 10pt; line-height: 1.2; }
+.header-photo { width: 18%; text-align: center; font-size: 7pt; color: #555; }
+.grey-banner { background: #6b7c99; color: #fff; text-align: center; font-weight: bold; font-size: 11pt; padding: 5px; border: 1.5px solid #000; border-top: none; margin-top: 0; }
+.meta-row { font-size: 7.5pt; }
+h2 { font-size: 12pt; text-align: center; margin: 12px 0 8px 0; text-transform: uppercase; border-bottom: 1.5px solid #000; padding-bottom: 4px; }
+h3 { font-size: 10pt; background: #e8edf3; padding: 4px 6px; border: 1px solid #999; margin-top: 14px; }
+table.data { width: 100%; border-collapse: collapse; margin: 6px 0 10px 0; }
+table.data th, table.data td { border: 1px solid #444; padding: 4px 5px; font-size: 8.5pt; text-align: left; }
+table.data th { background: #e8edf3; font-weight: bold; }
+.photo-box { width: 90px; height: 110px; border: 1px solid #777; background: #f0f0f0; display: inline-block; text-align: center; line-height: 110px; font-size: 7pt; color: #666; }
+.member-block { border: 1px solid #999; padding: 8px; margin-bottom: 10px; page-break-inside: avoid; }
+.cover-green { background: #d6e9d6; border: 2px solid #4a7c4a; padding: 12px; text-align: center; margin: 12px 0; }
+.cover-grey { background: #e0e0e0; border: 1px solid #777; padding: 8px; text-align: center; }
+.rule-list li { margin-bottom: 4px; }
+.page-break { page-break-after: always; }
+.signature-line { border-top: 1px solid #000; width: 140px; display: inline-block; margin-top: 20px; text-align: center; font-size: 7pt; }
+</style>
+</head>
+<body>
+
+<!-- REPEATING HEADER -->
+<table class="header-table">
+<tr>
+<td class="header-logo">LOGO</td>
+<td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td>
+<td class="header-photo">Photo<br>(HOD/Guide)</td>
+</tr>
+<tr class="meta-row">
+<td>Record No.: {{ record_no }} &nbsp; Revision: {{ revision }}</td>
+<td style="text-align:center; font-weight:bold;">Project Diary</td>
+<td style="text-align:right;">DoI: {{ doi }}</td>
+</tr>
+</table>
+<div class="grey-banner">Project Diary</div>
+
+<!-- COVER -->
+<h2>Department of {{ department.name }} Engineering</h2>
+<h2>BE PROJECT LOG BOOK &nbsp; A.Y. {{ academic_year.year_label }}</h2>
+<div style="text-align:center; margin: 14px 0; border:1px solid #999; height: 140px; line-height:140px; color:#777;">[ College Building Photo ]</div>
+<div class="cover-green">
+<div><b>Project Title:</b> {{ project.title|default:"____________________" }}</div>
+<div><b>Area of Project:</b> {{ project.area_domain|default:"________________" }}</div>
+<div><b>Project Guide:</b> {% for g in group.guide_assignments.all %}{{ g.faculty.email }}{% empty %}________________{% endfor %}</div>
+</div>
+<div class="cover-grey"><b>Group No.: {{ group.group_number }}</b></div>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>Rules & Regulations</h2>
+<ol class="rule-list" style="font-size:8.5pt;">
+<li>Students should maintain the log book regularly and produce it whenever demanded by guide/HOD.</li>
+<li>Entries should be made in chronological order with date and signature of student and guide.</li>
+<li>All activities, meetings, and decisions must be recorded with proper dates.</li>
+<li>Project work should be carried out as per the approved schedule.</li>
+<li>Weekly meeting with guide is mandatory and must be recorded.</li>
+<li>Any change in topic/scope must be approved by guide and HOD.</li>
+<li>Attendance in reviews is compulsory for all members.</li>
+<li>Plagiarism in report/paper is strictly prohibited.</li>
+<li>Maintain proper versioning of documents and code.</li>
+<li>Competition/paper details must be entered with proof.</li>
+<li>Term-I and Term-II checklists must be completed before submission.</li>
+<li>Sponsored projects must maintain meeting records with company.</li>
+<li>Final logbook must be verified by guide and HOD before submission.</li>
+</ol>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>Project Group Information</h2>
+{% for m in members %}
+<div class="member-block">
+<table class="data"><tr><th colspan="3" style="background:#d6e9d6;">Member {{ forloop.counter }} {% if m.role == 'leader' %}(Leader){% endif %}</th></tr>
+<tr><td rowspan="5" style="width:110px; text-align:center;"><div class="photo-box">Affix your photo here</div></td><td><b>Name:</b> {{ m.profile.name|default:m.user.email }}</td><td><b>TE Result:</b> ______</td></tr>
+<tr><td><b>Roll No.:</b> {{ m.profile.roll_number|default:"______" }}</td><td><b>Mobile No.:</b> {{ m.profile.mobile|default:"______" }}</td></tr>
+<tr><td><b>Exam Seat No.:</b> {{ m.profile.exam_seat_number|default:"______" }}</td><td><b>Email ID:</b> {{ m.profile.email|default:m.user.email }}</td></tr>
+<tr><td colspan="2"><b>Contribution:</b> ________________________________________</td></tr>
+<tr><td colspan="2" style="height:16px;"></td></tr>
+</table>
+</div>
+{% if forloop.counter|divisibleby:2 and not forloop.last %}<div class="page-break"></div><table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>{% endif %}
+{% endfor %}
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>Undertaking by Students</h2>
+<p>We, the students of B.E. {{ department.name }} batch {{ academic_year.year_label }} hereby assure that the project entitled <b>"{{ project.title|default:"__________________" }}"</b> is our original work carried out under the guidance of our project guide. We have maintained the log book honestly.</p>
+<table class="data"><tr><th>Sr. No.</th><th>Name</th><th>Signature</th></tr>
+{% for m in members %}<tr><td>{{ forloop.counter }}</td><td>{{ m.profile.name|default:m.user.email }}</td><td style="font-size:7pt; color:#555;">Digitally Acknowledged on {{ generated_on }}</td></tr>{% endfor %}
+</table>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>B.E. Project Schedule — Sem I & II</h2>
+<h3>Semester I</h3>
+<table class="data"><tr><th>Sr.</th><th>Description</th><th>Dates</th></tr>
+<tr><td>1</td><td>Group formation & Project area finalization</td><td></td></tr>
+<tr><td>2</td><td>Literature survey & Topic finalization</td><td></td></tr>
+<tr><td>3</td><td>Requirement analysis & Feasibility study</td><td></td></tr>
+<tr><td>4</td><td>System design & UML diagrams</td><td></td></tr>
+<tr><td>5</td><td>Review - I</td><td></td></tr>
+<tr><td>6</td><td>Review - II</td><td></td></tr>
+<tr><td>7</td><td>Implementation (50% target)</td><td></td></tr>
+<tr><td>8</td><td>Term-I Final Review & Report</td><td></td></tr>
+</table>
+<h3>Semester II</h3>
+<table class="data"><tr><th>Sr.</th><th>Description</th><th>Dates</th></tr>
+<tr><td>1</td><td>Implementation (remaining)</td><td></td></tr>
+<tr><td>2</td><td>Testing (Alpha/Beta)</td><td></td></tr>
+<tr><td>3</td><td>Review - I (Term-II)</td><td></td></tr>
+<tr><td>4</td><td>Review - II (Term-II)</td><td></td></tr>
+<tr><td>5</td><td>Final Mock Evaluation</td><td></td></tr>
+<tr><td>6</td><td>Report writing & Paper publication</td><td></td></tr>
+<tr><td>7</td><td>Final Submission & External Evaluation</td><td></td></tr>
+</table>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>Finalization of Project Topic — Topic 1</h2>
+<p><b>Proposed Topic:</b> {{ project.title|default:"__________________" }}</p>
+<table class="data"><tr><th>Parameter</th><th>Remarks</th><th>Marks</th></tr>
+<tr><td>Significance</td><td></td><td></td></tr>
+<tr><td>Innovativeness</td><td></td><td></td></tr>
+<tr><td>Scope</td><td></td><td></td></tr>
+<tr><td>Feasibility</td><td></td><td></td></tr>
+<tr><td>Approved (Y/N)</td><td></td><td></td></tr>
+</table>
+<p>Reviewer 1: ________________ <span class="signature-line">Signature</span> &nbsp; Reviewer 2: ________________ <span class="signature-line">Signature</span></p>
+<p>Project Coordinator: ________________ <span class="signature-line">Signature</span> &nbsp; HOD: <span style="font-size:7pt;">Digitally approved</span></p>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>Finalization of Project Topic — Topic 2</h2>
+<p><b>Proposed Topic (Alternative):</b> ________________________________________________</p>
+<table class="data"><tr><th>Parameter</th><th>Remarks</th><th>Marks</th></tr>
+<tr><td>Significance</td><td></td><td></td></tr>
+<tr><td>Innovativeness</td><td></td><td></td></tr>
+<tr><td>Scope</td><td></td><td></td></tr>
+<tr><td>Feasibility</td><td></td><td></td></tr>
+<tr><td>Approved (Y/N)</td><td></td><td></td></tr>
+</table>
+<p>Reviewer 1: ________________ <span class="signature-line">Signature</span> &nbsp; Reviewer 2: ________________ <span class="signature-line">Signature</span></p>
+
+<!-- MONTHLY ACTIVITY CHARTS -->
+{% for stage in stages %}{% if stage.slug in "june july august september october november december january february march" or stage.name|lower in "monthly activity" %}
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>Monthly Activity Chart — {{ stage.name }}</h2>
+<table class="data"><tr><th>Date</th><th>Activity Planned</th><th>Complete/Incomplete</th><th>Signature of Student</th><th>Signature of Guide</th></tr>
+<tr><td></td><td>Group Submission</td><td></td><td></td><td></td></tr>
+<tr><td></td><td>Guide Allocation</td><td></td><td></td><td></td></tr>
+<tr><td></td><td>Domain Finalization</td><td></td><td></td><td></td></tr>
+<tr><td></td><td>Guide Meeting - Topic Finalization</td><td></td><td></td><td></td></tr>
+<tr><td></td><td>Guide Meeting - Topic Finalization</td><td></td><td></td><td></td></tr>
+<tr><td></td><td>Guide Meeting - Topic Finalization</td><td></td><td></td><td></td></tr>
+</table>
+{% endif %}{% endfor %}
+
+<!-- Requirement Traceability Matrix -->
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>Requirement Traceability Matrix</h2>
+<p style="font-size:8pt; color:#555;">(Student-uploaded RTM content — if not provided, section remains titled as in official format)</p>
+<table class="data"><tr><th>Req ID</th><th>Requirement</th><th>Design Ref</th><th>Test Ref</th></tr><tr><td>R1</td><td></td><td></td><td></td></tr><tr><td>R2</td><td></td><td></td><td></td></tr></table>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>Project Cost Estimation</h2>
+<table class="data"><tr><th>Sr.</th><th>Item</th><th>Cost (Rs.)</th></tr><tr><td>1</td><td>Hardware</td><td></td></tr><tr><td>2</td><td>Software</td><td></td></tr><tr><td>3</td><td>Other</td><td></td></tr><tr><td></td><td>Total</td><td></td></tr></table>
+
+<!-- FACULTY GRADES - DETAILED -->
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>Faculty Grades — Detailed Criterion Marks</h2>
+<p style="font-size:7.5pt; color:#555;">Grades below are the actual marks entered by Guide/Reviewer per criterion. Totals feed into the 50/100 summary tables.</p>
+{% for rw in reviews_with_marks %}
+<h3>Review {{ rw.review.review_number }} — {{ rw.review.status }} — {{ rw.review.review_date }}</h3>
+{% if rw.criteria %}
+<table class="data"><tr><th>Criterion</th><th>Max</th><th>Obtained</th><th>Reviewer</th><th>Remarks</th></tr>
+{% for item in rw.criteria %}<tr><td>{{ item.criterion.name }}</td><td>{{ item.criterion.max_marks }}</td><td>{% if item.mark %}{{ item.mark.obtained_marks }}{% else %}—{% endif %}</td><td>{% if item.mark %}{{ item.mark.reviewer.email }}{% else %}{{ rw.review.reviewer.email }}{% endif %}</td><td>{% if item.mark %}{{ item.mark.remarks }}{% endif %}</td></tr>{% endfor %}
+</table>
+{% else %}<p style="font-size:7pt;">No criteria configured for this review.</p>{% endif %}
+{% empty %}<p style="font-size:7pt;">No reviews configured yet — grades will appear here once faculty enters marks.</p>{% endfor %}
+
+<!-- TERM-I REVIEWS -->
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>BE Project (Term-I) Review — I</h2>
+<p style="font-size:8pt;">Problem Statement / Motivation / Objectives / Literature Review (10 questions)</p>
+<table class="data"><tr><th>#</th><th>Question</th><th>Remark / Grade</th><th>Sign of Guide</th></tr>
+<tr><td>1</td><td>Is problem statement clearly defined?</td><td></td><td></td></tr>
+<tr><td>2</td><td>Is motivation clearly stated?</td><td></td><td></td></tr>
+<tr><td>3</td><td>Are objectives clearly defined?</td><td></td><td></td></tr>
+<tr><td>4</td><td>Is literature survey adequate?</td><td></td><td></td></tr>
+<tr><td>5</td><td>Is gap identified?</td><td></td><td></td></tr>
+<tr><td>6</td><td>Is methodology appropriate?</td><td></td><td></td></tr>
+<tr><td>7</td><td>Is scope defined?</td><td></td><td></td></tr>
+<tr><td>8</td><td>Is feasibility considered?</td><td></td><td></td></tr>
+<tr><td>9</td><td>Is presentation clear?</td><td></td><td></td></tr>
+<tr><td>10</td><td>Overall understanding?</td><td></td><td></td></tr>
+</table>
+<p>Reviewer 1: ________________ Reviewer 2: ________________</p>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>BE Project (Term-I) Review — II (Feasibility & Scope — 12 questions)</h2>
+<table class="data"><tr><th>#</th><th>Question</th><th>Remark</th><th>Sign</th></tr>
+{% for i in "123456789012"|make_list %}<tr><td>{{ forloop.counter }}</td><td>Feasibility question {{ forloop.counter }}</td><td></td><td></td></tr>{% endfor %}
+</table>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>BE Project Mock (Term-I) Final Review — Design (17 questions)</h2>
+<table class="data"><tr><th>#</th><th>Question (UML, class diagrams, state charts, DFDs...)</th><th>Remark</th><th>Sign</th></tr>
+{% for i in "12345678901234567"|make_list %}<tr><td>{{ forloop.counter }}</td><td>Design question {{ forloop.counter }} — Is it cleat which classes provide which services (verbatim)</td><td></td><td></td></tr>{% endfor %}
+</table>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>BE Project Mock (Term-I) Final Review — Marks Table (50)</h2>
+<table class="data"><tr><th>Name</th><th>Problem (05)</th><th>Lit. Survey (05)</th><th>Req. Analysis (10)</th><th>Planning (05)</th><th>Presentation (10)</th><th>Report (10)</th><th>Total (50)</th></tr>
+{% for m in members %}<tr><td>{{ m.profile.name|default:m.user.email }}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>{% endfor %}
+</table>
+<p>Evaluation Committee: ________________ ________________ ________________</p>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>BE Project Term-I Submission Check List</h2>
+<ol style="font-size:8.5pt;"><li>Log book duly filled and signed</li><li>Partial report submitted</li><li>Presentation ready</li><li>Attendance in reviews</li><li>Guide approval obtained</li></ol>
+
+<h2>External Examiner Feedback (Term-I)</h2>
+<p><b>Project:</b> {{ project.title|default:"" }} &nbsp; <b>Date:</b> {{ generated_on }}</p>
+<table class="data"><tr><th>#</th><th>Parameter</th><th>Excellent</th><th>Good</th><th>Satisfactory</th></tr>
+{% for i in "123456789"|make_list %}<tr><td>{{ forloop.counter }}</td><td>Feedback parameter {{ forloop.counter }}</td><td>☐</td><td>☐</td><td>☐</td></tr>{% endfor %}
+</table>
+<p>Remarks: _________________________________________________________________</p>
+<p>External: ________________ Internal: ________________</p>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>Participation in Project Competition / Paper Publication</h2>
+<table class="data"><tr><th>Competition</th><th>Date</th><th>College</th><th>Type</th><th>Award</th></tr><tr><td></td><td></td><td></td><td></td><td></td></tr></table>
+<table class="data" style="margin-top:8px;"><tr><th>Paper Title</th><th>Conference</th><th>ISSN</th><th>Vol</th><th>Pages</th></tr><tr><td></td><td></td><td></td><td></td><td></td></tr></table>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>BE Project (Term-II) Review I — Modeling (13 questions)</h2>
+<table class="data"><tr><th>#</th><th>Modeling question</th><th>Remark</th><th>Sign</th></tr>
+{% for i in "1234567890123"|make_list %}<tr><td>{{ forloop.counter }}</td><td>Modeling Q{{ forloop.counter }}</td><td></td><td></td></tr>{% endfor %}
+</table>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>BE Project (Term-II) Review II — Coding / Implementation (10 questions)</h2>
+<table class="data"><tr><th>#</th><th>Question</th><th>Date/Remark</th><th>Sign</th></tr>
+{% for i in "1234567890"|make_list %}<tr><td>{{ forloop.counter }}</td><td>Coding Q{{ forloop.counter }}</td><td></td><td></td></tr>{% endfor %}
+</table>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>Validation and Testing (9 questions)</h2>
+<table class="data"><tr><th>#</th><th>Question (alpha/beta, GUI, usability, datasets, real-time, integration, repository)</th><th>Remark</th></tr>
+{% for i in "123456789"|make_list %}<tr><td>{{ forloop.counter }}</td><td>Testing Q{{ forloop.counter }}</td><td></td></tr>{% endfor %}
+</table>
+<h2>Report Writing (9 questions)</h2>
+<table class="data"><tr><th>#</th><th>Question (format, plagiarism, precision, figures, citations)</th><th>Remark</th></tr>
+{% for i in "123456789"|make_list %}<tr><td>{{ forloop.counter }}</td><td>Report Q{{ forloop.counter }}</td><td></td></tr>{% endfor %}
+</table>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>Final Evaluation of Project — Marks Table (100)</h2>
+<table class="data"><tr><th>Name</th><th>Modeling(10)</th><th>Coding(40)</th><th>Testing(10)</th><th>Understanding(10)</th><th>Team(10)</th><th>Demo(10)</th><th>Report(10)</th><th>Total(100)</th></tr>
+{% for m in members %}<tr><td>{{ m.profile.name|default:m.user.email }}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>{% endfor %}
+</table>
+<p>Evaluation Committee: ________________ ________________ ________________</p>
+
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>BE Project Term-II Submission — Check List</h2>
+<ol style="font-size:8.5pt;"><li>Log book completed</li><li>Final report submitted</li><li>CD contents: report PDF, PPT, source code, paper, certificates, etc. (9 items)</li><li>Guide/HOD approval</li><li>External evaluation</li><li>Attendance</li><li>Plagiarism check</li><li>Fee clearance</li></ol>
+
+{% if is_sponsored %}
+<div class="page-break"></div>
+<table class="header-table"><tr><td class="header-logo">LOGO</td><td class="header-center">{{ college_line1 }}<br>{{ college_line2 }}</td><td class="header-photo">Photo</td></tr><tr class="meta-row"><td>Record No.: {{ record_no }} Revision: {{ revision }}</td><td style="text-align:center;font-weight:bold;">Project Diary</td><td style="text-align:right;">DoI: {{ doi }}</td></tr></table><div class="grey-banner">Project Diary</div>
+<h2>For Sponsored Project — Meeting Details</h2>
+<table class="data"><tr><th>Date</th><th>Discussion</th><th>Sign (Company)</th><th>Sign (Guide)</th></tr><tr><td></td><td></td><td></td><td></td></tr></table>
+<h2>Sponsored Project Feedback (7 parameters — High/Medium/Low)</h2>
+<table class="data"><tr><th>Parameter</th><th>High</th><th>Medium</th><th>Low</th></tr>
+{% for i in "1234567"|make_list %}<tr><td>Param {{ forloop.counter }}</td><td>☐</td><td>☐</td><td>☐</td></tr>{% endfor %}
+</table>
+<p>Company: ________________ &nbsp; Reporting Authority: ________________ <span class="signature-line">Seal/Signature</span></p>
+{% endif %}
+
+<p style="text-align:center; font-size:7pt; color:#777; margin-top: 20px;">— End of Official Log Book — Version {{ version }} —</p>
+
+</body>
+</html>
