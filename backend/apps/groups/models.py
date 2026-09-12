@@ -93,7 +93,7 @@ class GroupMember(models.Model):
     acknowledged = models.BooleanField(default=False)
     acknowledged_at = models.DateTimeField(null=True, blank=True)
     photo = models.ImageField(upload_to="students/photos/", null=True, blank=True)
-    joined_date = models.DateField(default=timezone.now)
+    joined_date = models.DateField(default=timezone.localdate)
     left_date = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
@@ -118,7 +118,7 @@ class ProjectGuideAssignment(models.Model):
     academic_year = models.ForeignKey(
         "academics.AcademicYear", on_delete=models.CASCADE
     )
-    assigned_date = models.DateField(default=timezone.now)
+    assigned_date = models.DateField(default=timezone.localdate)
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -151,7 +151,7 @@ class ReviewerAssignment(models.Model):
     assignment_type = models.CharField(
         max_length=20, choices=REVIEW_TYPE_CHOICES, default="internal"
     )
-    assigned_date = models.DateField(default=timezone.now)
+    assigned_date = models.DateField(default=timezone.localdate)
     is_active = models.BooleanField(default=True)
 
     class Meta:

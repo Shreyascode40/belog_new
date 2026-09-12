@@ -77,23 +77,137 @@ class SubmissionViewSet(viewsets.ModelViewSet):
         s.status = "submitted"
         s.submitted_at = timezone.now()
         s.save()
+        from apps.notifications.models import Notification
+
+        # notify assigned guide/reviewer and HOD
+        notified = False
+        for ga in s.group.guide_assignments.filter(is_active=True):
+            Notification.objects.create(
+                recipient=ga.faculty,
+                notification_type="submission",
+                title="New Submission for Review",
+                message=f"Group {s.group.group_number} Level {s.section.stage.order} — {s.section.stage.name} submitted by {request.user.email}",
+                related_type="submission",
+                related_id=s.id,
+            )
+            notified = True
+        for ra in s.group.reviewer_assignments.filter(is_active=True):
+            Notification.objects.create(
+                recipient=ra.faculty,
+                notification_type="submission",
+                title="New Submission for Review",
+                message=f"Group {s.group.group_number} Level {s.section.stage.order} — {s.section.stage.name} submitted",
+                related_type="submission",
+                related_id=s.id,
+            )
+            notified = True
+        if not notified:
+            from django.contrib.auth import get_user_model
+
+            User = get_user_model()
+            for hod in User.objects.filter(role__in=["hod", "admin"]):
+                Notification.objects.create(
+                    recipient=hod,
+                    notification_type="submission",
+                    title="Submission (no guide)",
+                    message=f"Group {s.group.group_number} submitted Level {s.section.stage.order} — no guide assigned",
+                    related_type="submission",
+                    related_id=s.id,
+                )
         return Response(SubmissionSerializer(s).data)
+
+    def _check_approver(self, submission):
+        u = self.request.user
+        if u.role in ["hod", "admin"]:
+            return True
+        if (
+            submission.group.guide_assignments.filter(faculty=u).exists()
+            or submission.group.reviewer_assignments.filter(faculty=u).exists()
+        ):
+            return True
+        raise PermissionDenied(
+            {
+                "message": "Only assigned Guide/Reviewer or HOD can approve",
+                "errors": {"permission": ["Not assigned to this group"]},
+            }
+        )
 
     @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):
         s = self.get_object()
+        self._check_approver(s)
         s.status = "approved"
         s.reviewed_at = timezone.now()
         s.reviewed_by = request.user
         s.save()
+        from apps.notifications.models import Notification
+        from apps.audit.models import AuditLog
+
+        for member in s.group.members.filter(status="accepted"):
+            Notification.objects.create(
+                recipient=member.student,
+                notification_type="approval",
+                title="Submission Approved",
+                message=f"Level {s.section.stage.order} — {s.section.stage.name} approved by {request.user.email}",
+                related_type="submission",
+                related_id=s.id,
+            )
+        # also notify HOD
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        for hod in User.objects.filter(role__in=["hod", "admin"]):
+            Notification.objects.create(
+                recipient=hod,
+                notification_type="approval",
+                title="Submission Approved",
+                message=f"Group {s.group.group_number} Level {s.section.stage.order} approved by {request.user.email}",
+                related_type="submission",
+                related_id=s.id,
+            )
+        AuditLog.objects.create(
+            actor=request.user,
+            actor_role=request.user.role,
+            action="submission_approved",
+            entity_type="submission",
+            entity_id=s.id,
+            new_value={
+                "group": s.group.id,
+                "stage": s.section.stage.id,
+                "status": "approved",
+            },
+        )
         return Response(SubmissionSerializer(s).data)
 
     @action(detail=True, methods=["post"])
     def request_changes(self, request, pk=None):
         s = self.get_object()
+        self._check_approver(s)
         s.status = "changes_required"
-        s.review_remarks = request.data.get("remarks", "")
+        s.review_remarks = request.data.get("remarks", "") or request.data.get(
+            "review_remarks", ""
+        )
         s.save()
+        from apps.notifications.models import Notification
+        from apps.audit.models import AuditLog
+
+        for member in s.group.members.filter(status="accepted"):
+            Notification.objects.create(
+                recipient=member.student,
+                notification_type="change_request",
+                title="Changes Requested",
+                message=f"Level {s.section.stage.order} — {s.section.stage.name}: {s.review_remarks}",
+                related_type="submission",
+                related_id=s.id,
+            )
+        AuditLog.objects.create(
+            actor=request.user,
+            actor_role=request.user.role,
+            action="changes_requested",
+            entity_type="submission",
+            entity_id=s.id,
+            new_value={"group": s.group.id, "remark": s.review_remarks},
+        )
         return Response(SubmissionSerializer(s).data)
 
     @action(detail=True, methods=["post"])

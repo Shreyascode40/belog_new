@@ -15,6 +15,9 @@ import CreateGroup from './pages/CreateGroup'
 import LevelFill from './pages/LevelFill'
 import CoverPage from './pages/CoverPage'
 import StudentInfo from './pages/StudentInfo'
+import HODGroups from './pages/HODGroups'
+import HODAllocate from './pages/HODAllocate'
+import FacultyEvaluate from './pages/FacultyEvaluate'
 
 const qc = new QueryClient()
 function Guard({children}:{children:React.ReactNode}){
@@ -35,6 +38,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="cover" element={<CoverPage/>}/>
           <Route path="student-info" element={<StudentInfo/>}/>
           <Route path="level/:stageId" element={<LevelFill/>}/>
+          <Route path="hod/groups" element={<HODGroups/>}/>
+          <Route path="hod/allocate" element={<HODAllocate/>}/>
+          <Route path="faculty/evaluate" element={<FacultyEvaluate/>}/>
           <Route path="projects" element={<Projects/>}/>
           <Route path="stages" element={<Stages/>}/>
           <Route path="submissions" element={<Submissions/>}/>

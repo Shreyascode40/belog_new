@@ -163,21 +163,41 @@ export default function Dashboard(){
         <div className="text-xs text-gray-400 mt-2">Fills every logbook section from student side — member contacts (roll/mobile/seat/email), project title/area, undertakings etc. Guide/HOD still approves & grants next level.</div>
       </div>
       {level?.levels && <div className="mt-6 bg-white p-4 rounded-xl border">
-        <div className="text-sm font-semibold mb-3">Journey — click to open level (only if previous complete)</div>
-        <div className="flex gap-2 overflow-x-auto">
-          {level.levels.map((l:any, idx:number)=>{
-            const prev = idx>0 ? level.levels[idx-1] : null
-            const prevDone = !prev || ['APPROVED','LOCKED'].includes(prev.status)
-            const isClickable = prevDone || l.order===level.current_level_order || l.order<level.current_level_order
-            return <div key={l.order} onClick={()=>openLevel(l, idx)} className={`min-w-[120px] p-3 rounded border text-xs ${!isClickable?'opacity-40 cursor-not-allowed': 'cursor-pointer hover:shadow'} ${l.order===level.current_level_order?'bg-blue-600 text-white': l.order<level.current_level_order?'bg-green-50 border-green-200':'bg-gray-50'}`}>
-            <div className="font-semibold">{l.order===0?'✓': l.order<level.current_level_order?'✓': !isClickable?'🔒':'→'} Level {l.order} {isClickable?'':'🔒'}</div>
-            <div className="truncate">{l.name}</div>
-            <div className="opacity-70">{l.status}</div>
-            {isClickable && <div className="text-xs mt-1 underline">Open →</div>}
-          </div>})}
+        <div className="flex justify-between items-center mb-3">
+          <div className="text-sm font-bold">Journey — Your Project Progress</div>
+          <div className="text-xs text-gray-500">{level.levels.filter((x:any)=>['APPROVED','LOCKED'].includes(x.status)).length} / {level.levels.length} completed</div>
         </div>
-        {levelMsg&&<div className="text-xs mt-2 p-2 bg-amber-50 text-amber-700 rounded">{levelMsg}</div>}
-        <div className="text-xs text-gray-400 mt-2">Previous level must be APPROVED/LOCKED — backend enforces 403 otherwise. Click any unlocked level to open its endpoint.</div>
+        <div className="relative">
+          <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+          <div className="flex flex-col gap-3">
+            {level.levels.map((l:any, idx:number)=>{
+              const prev = idx>0 ? level.levels[idx-1] : null
+              const prevDone = !prev || ['APPROVED','LOCKED'].includes(prev.status)
+              const isClickable = prevDone || l.order===level.current_level_order || l.order<level.current_level_order
+              const isCurrent = l.order===level.current_level_order
+              const isDone = ['APPROVED','LOCKED'].includes(l.status)
+              const isLocked = !isClickable
+              return <div key={l.order} onClick={()=>isClickable && openLevel(l, idx)} className={`relative flex gap-4 p-4 rounded-xl border ${isLocked?'opacity-50 cursor-not-allowed bg-gray-50': 'cursor-pointer hover:shadow-md bg-white'} ${isCurrent?'border-blue-500 ring-2 ring-blue-100': isDone?'border-green-300 bg-green-50':''}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isDone?'bg-green-600 text-white': isCurrent?'bg-blue-600 text-white': isLocked?'bg-gray-300 text-gray-600':'bg-slate-800 text-white'}`}>
+                  {isDone?'✓': isLocked?'🔒': l.order}
+                </div>
+                <div className="flex-1">
+                  <div className="flex justify-between items-center">
+                    <div className="font-semibold text-sm">Level {l.order} — {l.name}</div>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${l.status==='APPROVED'?'bg-green-100 text-green-700': l.status==='LOCKED'?'bg-slate-800 text-white': l.status==='SUBMITTED'?'bg-yellow-100 text-yellow-700': l.status==='UNDER_REVIEW'?'bg-blue-100 text-blue-700': l.status==='CHANGES_REQUIRED'?'bg-red-100 text-red-700':'bg-gray-200 text-gray-600'}`}>{l.status}</span>
+                  </div>
+                  <div className="text-xs text-gray-500 truncate">{l.slug} • {l.granted?'Access Granted': l.order===1 && !l.granted && l.status==='APPROVED'?'Waiting for guide grant':''}</div>
+                  {isCurrent && <div className="text-xs mt-1 text-blue-600 font-medium">→ Current: {level.next_action_label}</div>}
+                  {isDone && <div className="text-xs mt-1 text-green-600">✓ Completed — click to view</div>}
+                  {isLocked && <div className="text-xs mt-1 text-gray-400">🔒 Locked — complete "{prev?.name}" first</div>}
+                  {isClickable && !isLocked && <div className="text-xs mt-2 text-blue-600 underline">Open to fill next info →</div>}
+                </div>
+              </div>
+            })}
+          </div>
+        </div>
+        {levelMsg&&<div className="text-xs mt-3 p-3 bg-amber-50 text-amber-700 rounded border border-amber-200">{levelMsg}</div>}
+        <div className="text-xs text-gray-400 mt-3">System: Previous level must be APPROVED/LOCKED. Click any unlocked (white/blue/green) level to fill. Grey locked levels are blocked server-side (403).</div>
       </div>}
       <div className="grid grid-cols-3 gap-4 mt-6">
         <Card title="My Group" value={data.my_group?.[0]?.group_number||data.my_group?.group_number||'-'}/>
@@ -192,6 +212,7 @@ export default function Dashboard(){
   }
   return <div>
     <h1 className="text-2xl font-bold">Guide / Reviewer Dashboard</h1>
+    <p className="text-xs text-gray-500">System to evaluate all levels activity properly — every stage is reviewed, not just Level 0.</p>
     <div className="grid grid-cols-3 gap-4 mt-6">
       <Card title="Assigned Groups" value={data.assigned_groups??queue.length}/>
       <Card title="Awaiting Action" value={queue.filter((q:any)=>q.needs_data_approval||q.needs_access_grant).length}/>
@@ -199,16 +220,23 @@ export default function Dashboard(){
     </div>
     {grantMsg&&<div className="mt-4 text-sm text-green-600">{grantMsg}</div>}
     <div className="mt-6 bg-white p-4 rounded-xl border">
-      <h2 className="font-semibold">Groups awaiting your action</h2>
-      <div className="mt-2">
-        <div className="text-xs font-semibold text-gray-500">Data to approve</div>
-        {queue.filter((q:any)=>q.needs_data_approval).map((q:any)=><div key={'d'+q.group_id} className="flex justify-between py-2 border-b text-sm"><span>Group {q.group_number} — {q.level.current_level_name}</span><span className="text-amber-600">Submitted</span></div>)}
-        {queue.filter((q:any)=>q.needs_data_approval).length===0&&<div className="text-xs text-gray-400 py-2">None</div>}
-        <div className="text-xs font-semibold text-gray-500 mt-4">Access to grant</div>
-        {queue.filter((q:any)=>q.needs_access_grant).map((q:any)=><div key={'a'+q.group_id} className="flex justify-between items-center py-2 border-b text-sm"><span>Group {q.group_number} — Information APPROVED</span><button onClick={()=>grantAccess(q.group_id,q.level.stage_id,true)} className="bg-green-600 text-white px-3 py-1 rounded text-xs">Grant Access</button></div>)}
-        {queue.filter((q:any)=>q.needs_access_grant).length===0&&<div className="text-xs text-gray-400 py-2">None</div>}
+      <h2 className="font-semibold">Groups awaiting your action (All Levels)</h2>
+      <p className="text-xs text-gray-500">Proper evaluation: each level shows submission, status, and actions for every assigned group. Click "Evaluate All Levels" to open detailed per-level review.</p>
+      <div className="mt-3">
+        {queue.map((q:any)=><div key={q.group_id} className="border rounded p-3 mb-2 bg-gray-50">
+          <div className="flex justify-between items-center">
+            <div><span className="font-medium">Group {q.group_number}</span> — Level {q.level.current_level_order} {q.level.current_level_name} <span className={`ml-2 text-xs px-2 py-0.5 rounded ${q.level.current_level_status==='SUBMITTED'?'bg-yellow-100': q.level.current_level_status==='APPROVED'?'bg-green-100':'bg-gray-200'}`}>{q.level.current_level_status}</span></div>
+            <a href="/faculty/evaluate" className="bg-blue-600 text-white px-3 py-1 rounded text-xs">Evaluate All Levels →</a>
+          </div>
+          <div className="text-xs text-gray-500 mt-1">Needs: {q.needs_data_approval?'Data approval':''} {q.needs_data_approval && q.needs_access_grant ? ' • ' : ''} {q.needs_access_grant?'Access grant':''} {!q.needs_data_approval && !q.needs_access_grant?'No pending — view all levels anyway':''}</div>
+        </div>)}
+        {queue.length===0&&<div className="text-xs text-gray-400 py-2">No assigned groups — HOD must allocate via HOD → Allocate Guide/Reviewer</div>}
       </div>
-      <div className="mt-4 text-xs text-gray-500">Approve Data and Grant Access are separate actions. Both needed to unlock Level 1.</div>
+    </div>
+    <div className="bg-blue-50 p-4 rounded-xl border mt-6">
+      <h2 className="font-semibold text-sm">Evaluate All Levels Activity</h2>
+      <p className="text-xs text-gray-600">Faculty/Reviewer must evaluate <b>every</b> level: Information → Schedule & Topic → Activity → Requirement/Cost → Review-1 → Design → Review-2 → Development → Testing → Review-3 → Competition/Publication → Term → Final. Each level has Approve / Request Changes / Lock + per-criterion marks.</p>
+      <a href="/faculty/evaluate" className="mt-3 inline-block bg-slate-900 text-white px-6 py-2 rounded text-sm">Open Evaluation Workspace →</a>
     </div>
   </div>
 }
