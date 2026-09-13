@@ -35,14 +35,23 @@ class Command(BaseCommand):
         users = []
 
         def create_user(email, username, role, pwd="pass1234"):
-            u, c = User.objects.get_or_create(
-                email=email, defaults={"username": username, "role": role}
-            )
-            if c:
-                u.set_password(pwd)
+            u = User.objects.filter(email__iexact=email).first()
+            if u:
                 u.role = role
                 u.is_active = True
-                u.save()
+                u.save(update_fields=["role", "is_active"])
+                return u
+            uname = username
+            base = uname
+            i = 0
+            while User.objects.filter(username__iexact=uname).exists():
+                i += 1
+                uname = f"{base}{i}"
+            u = User.objects.create_user(
+                username=uname, email=email.lower(), password=pwd, role=role
+            )
+            u.is_active = True
+            u.save(update_fields=["is_active"])
             return u
 
         hod = create_user("hod@college.edu", "hod", "hod")

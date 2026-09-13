@@ -43,8 +43,8 @@ class SectionViewSet(viewsets.ModelViewSet):
     def _check_previous_level(self, obj):
         if self.request.user.role != "student":
             return
-        # Level 1 gate
-        if obj.stage.order >= 1:
+        # Level 1 gate - only for order >1 (order 1 is Info, no grant needed)
+        if obj.stage.order > 1:
             from apps.workflow.models import AccessGrant
 
             ag = AccessGrant.objects.filter(group=obj.group, stage__order=1).first()

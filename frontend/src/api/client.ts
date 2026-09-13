@@ -6,7 +6,8 @@ client.interceptors.request.use(c => {
   return c
 })
 client.interceptors.response.use(r=>r, async err => {
-  if (err.response?.status===401 && localStorage.getItem('refresh')) {
+  const url=err.config?.url||''
+  if (err.response?.status===401 && localStorage.getItem('refresh') && !url.includes('/auth/login/') && !url.includes('/auth/register/') && !url.includes('/auth/token/refresh/')) {
     try {
       const res = await axios.post('http://localhost:8000/api/v1/auth/token/refresh/', { refresh: localStorage.getItem('refresh') })
       localStorage.setItem('access', res.data.access)

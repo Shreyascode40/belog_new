@@ -15,7 +15,7 @@ def check_access_grant(user, submission_or_group, stage):
         if hasattr(submission_or_group, "group")
         else submission_or_group
     )
-    if stage.order >= 1:
+    if stage.order > 1:
         from apps.workflow.models import AccessGrant
 
         ag = AccessGrant.objects.filter(group=group, stage__order=1).first()
@@ -58,17 +58,50 @@ def check_access_grant(user, submission_or_group, stage):
 
 
 class SubmissionViewSet(viewsets.ModelViewSet):
-    queryset = Submission.objects.all()
     serializer_class = SubmissionSerializer
+
+    def get_queryset(self):
+        qs = Submission.objects.select_related("group", "section__stage").all()
+        u = self.request.user
+        if u and u.role == "student":
+            return qs.filter(
+                group__members__student=u, group__members__status="accepted"
+            ).distinct()
+        if u and u.role in ["faculty", "reviewer"]:
+            return (
+                qs.filter(group__guide_assignments__faculty=u).distinct()
+                | qs.filter(group__reviewer_assignments__faculty=u).distinct()
+                | qs.filter(group__members__student=u).distinct()
+            )
+        return qs
+
+    def _deny_student_approve(self):
+        if self.request.user.role == "student" and self.action in [
+            "approve",
+            "lock",
+            "request_changes",
+        ]:
+            raise PermissionDenied(
+                {
+                    "message": "Students cannot approve",
+                    "errors": {"permission": ["Student cannot approve"]},
+                }
+            )
+
+    def get_object(self):
+        obj = super().get_object()
+        # ownership already via queryset but double-check
+        self._deny_student_approve()
+        return obj
 
     def perform_create(self, serializer):
         obj = serializer.save()
-        if obj.section and obj.section.stage.order >= 1:
+        if obj.section and obj.section.stage.order > 1:
             check_access_grant(self.request.user, obj, obj.section.stage)
 
     def perform_update(self, serializer):
         obj = serializer.save()
-        if obj.section and obj.section.stage.order >= 1:
+        if obj.section and obj.section.stage.order > 1:
             check_access_grant(self.request.user, obj, obj.section.stage)
 
     @action(detail=True, methods=["post"])
@@ -234,5 +267,11 @@ class SubmissionViewSet(viewsets.ModelViewSet):
 
 
 class SubmissionVersionViewSet(viewsets.ModelViewSet):
-    queryset = SubmissionVersion.objects.all()
     serializer_class = SubmissionVersionSerializer
+
+    def get_queryset(self):
+        qs = SubmissionVersion.objects.all()
+        u = self.request.user
+        if u and u.role == "student":
+            return qs.filter(submission__group__members__student=u).distinct()
+        return qs

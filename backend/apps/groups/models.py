@@ -35,12 +35,55 @@ class ProjectGroup(models.Model):
     )
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="updated_groups",
+    )
     is_active = models.BooleanField(default=True)
 
     class Meta:
         db_table = "project_group"
         ordering = ["group_number"]
         unique_together = ["academic_year", "group_number", "department"]
+
+    @property
+    def semester(self):
+        try:
+            return (
+                self.academic_year.semesters.filter(is_active=True)
+                .order_by("number")
+                .first()
+            )
+        except Exception:
+            return None
+
+    @property
+    def is_locked(self):
+        try:
+            from apps.projects.models import Section
+
+            sec = Section.objects.filter(
+                group=self, status__in=["locked", "approved"]
+            ).first()
+            if sec and sec.status == "locked":
+                return True
+            from apps.projects.models import ProjectStage
+
+            info = (
+                ProjectStage.objects.filter(academic_year=self.academic_year)
+                .order_by("order")
+                .first()
+            )
+            if info:
+                s = Section.objects.filter(group=self, stage=info).first()
+                if s and s.status in ["locked", "approved"]:
+                    return s.status == "locked"
+            return False
+        except Exception:
+            return False
 
     def __str__(self):
         return f"Group {self.group_number} - {self.academic_year.year_label}"

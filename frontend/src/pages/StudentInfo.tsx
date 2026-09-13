@@ -1,112 +1,170 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import client from '../api/client'
+import { useNavigate } from 'react-router-dom'
 
-export default function StudentInfo(){
-  const nav=useNavigate()
-  const [group,setGroup]=useState<any>(null)
-  const [members,setMembers]=useState<any[]>([])
-  const [msg,setMsg]=useState('')
-  const [newMember,setNewMember]=useState({name:'', roll_number:'', mobile:'', exam_seat_number:'', email:'', te_result:'', contribution:''})
+type Form = { name: string; roll_number: string; mobile: string; exam_seat_number: string; email: string; te_result: string; contribution: string }
 
-  const load=async()=>{
-    const gRes=await client.get('/api/v1/groups/')
-    const g=(gRes.data.results||gRes.data.data||[])[0]
-    if(!g){ setMsg('No cover yet — create cover first'); return }
+const emptyForm = (): Form => ({ name: '', roll_number: '', mobile: '', exam_seat_number: '', email: '', te_result: '', contribution: '' })
+
+export default function StudentInfo() {
+  const nav = useNavigate()
+  const [group, setGroup] = useState<any>(null)
+  const [members, setMembers] = useState<any[]>([])
+  const [forms, setForms] = useState<Form[]>([emptyForm(), emptyForm(), emptyForm(), emptyForm()])
+  const [msg, setMsg] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const load = async () => {
+    const gRes = await client.get('/api/v1/groups/')
+    const g = (gRes.data.results || gRes.data.data || gRes.data || [])[0]
+    if (!g) return
     setGroup(g)
-    const mRes=await client.get(`/api/v1/groups/${g.id}/`)
-    setMembers(mRes.data.members||[])
+    const mRes = await client.get(`/api/v1/groups/${g.id}/`)
+    const mems: any[] = mRes.data.members || []
+    setMembers(mems)
+    setForms(Array.from({ length: 4 }, (_, i) => {
+      const m = mems[i]
+      if (!m) return emptyForm()
+      return {
+        name: m.student_detail?.name || '',
+        roll_number: m.student_detail?.roll_number || '',
+        mobile: m.student_detail?.mobile || '',
+        exam_seat_number: m.student_detail?.exam_seat_number || '',
+        email: m.student_detail?.email || m.student || '',
+        te_result: m.te_result || '',
+        contribution: m.contribution || '',
+      }
+    }))
   }
-  useEffect(()=>{ load() },[])
 
-  const updateProfile=async(m:any, field:string, value:string)=>{
-    if(!m.student_detail?.id) return
-    try{
-      await client.patch(`/api/v1/students/${m.student_detail.id}/`, {[field]: value})
-      setMsg(`Updated ${field} — will be fetched automatically next time`)
-      load()
-    }catch{ setMsg('Profile update failed') }
+  useEffect(() => { load() }, [])
+
+  const setField = (idx: number, field: keyof Form, val: string) => {
+    setForms(prev => prev.map((f, i) => i === idx ? { ...f, [field]: val } : f))
   }
-  const updateMember=async(m:any, field:string, value:string)=>{
-    try{
-      await client.patch(`/api/v1/group-members/${m.id}/`, {[field]: value})
-      load()
-    }catch{ setMsg('Update failed') }
-  }
-  const addMemberDirect=async()=>{
-    if(!newMember.email || !newMember.name || !newMember.roll_number){
-      setMsg('Name, Roll No., Email required for new member')
-      return
+
+  const saveAll = async () => {
+    if (!group) return
+    setSaving(true)
+    setMsg('')
+    let done = 0
+    for (let i = 0; i < 4; i++) {
+      const f = forms[i]
+      const existing = members[i]
+      const isEmpty = !f.name && !f.email && !f.roll_number
+      if (isEmpty) continue
+      if (!f.name || !f.roll_number || !f.email) {
+        setMsg(`Member ${i + 1}: Name, Roll No. and Email are required`)
+        setSaving(false)
+        return
+      }
+      try {
+        if (existing) {
+          if (existing.student_detail?.id) {
+            await client.patch(`/api/v1/students/${existing.student_detail.id}/`, {
+              name: f.name, roll_number: f.roll_number, mobile: f.mobile, exam_seat_number: f.exam_seat_number, email: f.email
+            })
+            if (existing.student_detail.user_id) {
+              try { await client.patch(`/api/v1/users/${existing.student_detail.user_id}/`, { email: f.email }) } catch {}
+            }
+          }
+          await client.patch(`/api/v1/group-members/${existing.id}/`, { te_result: f.te_result, contribution: f.contribution })
+          done++
+        } else {
+          await client.post(`/api/v1/groups/${group.id}/add-member-direct/`, f)
+          done++
+        }
+      } catch (e: any) {
+        const d = e.response?.data
+        setMsg(d?.message || d?.errors?.roll_number?.[0] || d?.errors?.email?.[0] || `Member ${i + 1} save failed`)
+        setSaving(false)
+        return
+      }
     }
-    try{
-      await client.post(`/api/v1/groups/${group.id}/add-member-direct/`, newMember)
-      setMsg(`Member ${newMember.name} added directly — no invite needed`)
-      setNewMember({name:'', roll_number:'', mobile:'', exam_seat_number:'', email:'', te_result:'', contribution:''})
-      load()
-    }catch(e:any){ setMsg(e.response?.data?.message||JSON.stringify(e.response?.data)||'Add failed — need exactly 4 members') }
-  }
-  const acknowledge=async()=>{
-    await client.post(`/api/v1/groups/${group.id}/acknowledge/`, {})
-    setMsg('You acknowledged — Digitally Acknowledged')
+    setMsg(done ? `${done} member(s) saved` : 'Nothing to save')
+    setSaving(false)
     load()
   }
-  const submit=async()=>{
-    try{
-      const r=await client.post(`/api/v1/groups/${group.id}/submit-information/`)
-      setMsg('Submitted — guide/HOD notified, awaiting AccessGrant. Other levels will unlock after approval.')
-      setTimeout(()=>nav('/'),1000)
-    }catch(e:any){ setMsg(e.response?.data?.message||JSON.stringify(e.response?.data?.errors)||'Submit failed — need exactly 4 members, all fields, all acknowledged') }
+
+  const remove = async (idx: number) => {
+    const m = members[idx]
+    if (!m || !confirm(`Remove Member ${idx + 1} — ${m.student_detail?.name || ''}?`)) return
+    await client.delete(`/api/v1/group-members/${m.id}/`)
+    setMsg(`Member ${idx + 1} removed`)
+    load()
   }
 
-  if(!group) return <div className="max-w-3xl mx-auto p-8 bg-white rounded-xl border mt-6">No cover yet — <a href="/cover" className="text-blue-600 underline">Go to Cover Page</a> to create Group No. first. {msg&&<div className="text-sm text-amber-600 mt-2">{msg}</div>}</div>
+  const acknowledge = async () => {
+    await client.post(`/api/v1/groups/${group.id}/acknowledge/`, {})
+    setMsg('You acknowledged')
+    load()
+  }
 
-  return <div className="max-w-4xl mx-auto">
-    <h1 className="text-2xl font-bold">Student Section — Member Info</h1>
-    <p className="text-xs text-gray-500 mt-1">Separate section (not in sidebar) — fill all 4 members directly here. No invite system — just fill fields like registration. If project title given but member info blank, it auto-fetches from registration.</p>
-    <div className="bg-blue-50 p-3 rounded text-sm mt-4">Group No. <b>{group.group_number}</b> — Project: <b>{group.project?.title}</b> — Guide: <b>Pending</b> — Fill exactly 4 members to unlock other levels. Members shown below are editable like registration.</div>
+  const submit = async () => {
+    try {
+      await client.post(`/api/v1/groups/${group.id}/submit-information/`)
+      setMsg('Submitted — awaiting guide/HOD verification')
+      setTimeout(() => nav('/'), 1000)
+    } catch (e: any) {
+      setMsg(e.response?.data?.message || 'Submit failed — need 4 members with all required fields and acknowledgement')
+    }
+  }
 
-    <div className="flex flex-col gap-4 mt-6">
-      {members.map((m:any,idx:number)=>(
-        <div key={m.id} className="border rounded-xl p-4 bg-white">
-          <div className="font-semibold text-sm mb-2">Member {idx+1} {m.role==='leader'?'— Leader (You)':''} {m.acknowledged?'✓ Acknowledged':''} — {m.student_detail?.name||''}</div>
-          <div className="text-xs text-green-600 mb-2">All fields like registration — Name*, Roll No.*, Mobile*, Exam Seat*, Email*, TE Result*, Contribution, Photo* — fetched automatically if blank.</div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col"><label className="text-xs font-semibold">Name *</label><input className="border p-2 rounded text-sm" defaultValue={m.student_detail?.name||''} placeholder="Full name" onBlur={e=>updateProfile(m,'name',e.target.value)} /></div>
-            <div className="flex flex-col"><label className="text-xs font-semibold">Roll No. *</label><input className="border p-2 rounded text-sm" defaultValue={m.student_detail?.roll_number||''} placeholder="41001" onBlur={e=>updateProfile(m,'roll_number',e.target.value)} /></div>
-            <div className="flex flex-col"><label className="text-xs font-semibold">TE Result *</label><input className="border p-2 rounded text-sm" defaultValue={m.te_result||''} placeholder="Distinction / First Class" onBlur={e=>updateMember(m,'te_result',e.target.value)} /></div>
-            <div className="flex flex-col"><label className="text-xs font-semibold">Mobile No. *</label><input className="border p-2 rounded text-sm" defaultValue={m.student_detail?.mobile||''} placeholder="10-digit" onBlur={e=>updateProfile(m,'mobile',e.target.value)} /></div>
-            <div className="flex flex-col"><label className="text-xs font-semibold">Exam Seat No. *</label><input className="border p-2 rounded text-sm" defaultValue={m.student_detail?.exam_seat_number||''} placeholder="SEAT..." onBlur={e=>updateProfile(m,'exam_seat_number',e.target.value)} /></div>
-            <div className="flex flex-col"><label className="text-xs font-semibold">Email ID *</label><input className="border p-2 rounded text-sm bg-gray-100" value={m.student_detail?.email||''} readOnly /></div>
-            <div className="flex flex-col col-span-2"><label className="text-xs font-semibold">Contribution</label><input className="border p-2 rounded text-sm" defaultValue={m.contribution||''} placeholder="Backend, Testing..." onBlur={e=>updateMember(m,'contribution',e.target.value)} /></div>
-            <div className="flex flex-col col-span-2"><label className="text-xs font-semibold">Photo * (Affix your photo here)</label><input type="file" accept="image/*" className="border p-2 rounded text-sm" onChange={e=>{ if(e.target.files?.[0]) setMsg(`Photo ${e.target.files[0].name} selected — will be DOCUMENT type STUDENT_PHOTO`)}} /></div>
+  if (!group) return <div className="max-w-3xl mx-auto p-8 bg-white rounded-xl border mt-6">No group yet — <a href="/cover" className="text-blue-600 underline">Create Cover</a> first. {msg && <div className="text-sm text-amber-600 mt-2">{msg}</div>}</div>
+
+  const filled = members.length
+  const allAcknowledged = members.length === 4 && members.every((m: any) => m.acknowledged)
+
+  return <div className="max-w-5xl mx-auto">
+    <h1 className="text-2xl font-bold">Student Information</h1>
+    <p className="text-sm text-gray-500 mt-1">One member can fill details for <b>all 4 members</b> in one place. Fill the 4 cards below and click <b>Save All</b>.</p>
+
+    <div className="bg-white border rounded-xl p-4 mt-4 flex flex-wrap gap-3 items-center justify-between">
+      <div className="text-sm">Group <b>{group.group_number}</b> — {group.project?.title || 'Untitled'} <span className="text-gray-400">| {filled}/4 members</span></div>
+      <div className="flex items-center gap-2">
+        <div className="w-32 bg-gray-200 rounded-full h-2"><div className="bg-blue-600 h-2 rounded-full" style={{ width: `${(filled / 4) * 100}%` }} /></div>
+        <span className="text-xs text-gray-500">{filled}/4</span>
+      </div>
+    </div>
+
+    {filled > 0 && filled < 4 && <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm p-3 rounded-xl mt-3">Draft — {filled}/4 filled. Complete all 4 to submit.</div>}
+    {filled === 4 && <div className="bg-green-50 border border-green-200 text-green-700 text-sm p-3 rounded-xl mt-3">4 members ready — save and submit for verification.</div>}
+
+    <div className="grid md:grid-cols-2 gap-4 mt-6">
+      {[0, 1, 2, 3].map(idx => {
+        const m = members[idx]
+        const f = forms[idx]
+        const isLeader = idx === 0 && m?.role === 'leader'
+        return <div key={idx} className={`border rounded-xl p-4 ${m ? 'bg-white' : 'bg-gray-50 border-dashed'}`}>
+          <div className="flex justify-between items-center mb-3">
+            <div className="font-semibold text-sm">Member {idx + 1} {isLeader && <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded ml-1">Leader</span>} {m?.acknowledged && <span className="text-green-600 text-xs ml-1">✓ Acknowledged</span>}</div>
+            {m && <button onClick={() => remove(idx)} className="text-xs text-red-600 hover:underline">Remove</button>}
+            {!m && <span className="text-xs text-gray-400">Empty slot</span>}
           </div>
-          <div className="text-xs mt-2">Status: <b>{m.status}</b> — {m.acknowledged?`Ack ${new Date(m.acknowledged_at).toLocaleDateString()}`:'Not acknowledged — each member must individually acknowledge undertaking'}</div>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="col-span-2 text-xs font-medium">Name *<input className="mt-1 border rounded w-full p-2 text-sm" placeholder="Full name" value={f.name} onChange={e => setField(idx, 'name', e.target.value)} /></label>
+            <label className="text-xs font-medium">Roll No. *<input className="mt-1 border rounded w-full p-2 text-sm" placeholder="41001" value={f.roll_number} onChange={e => setField(idx, 'roll_number', e.target.value)} /></label>
+            <label className="text-xs font-medium">TE Result<input className="mt-1 border rounded w-full p-2 text-sm" placeholder="Distinction" value={f.te_result} onChange={e => setField(idx, 'te_result', e.target.value)} /></label>
+            <label className="text-xs font-medium">Mobile *<input className="mt-1 border rounded w-full p-2 text-sm" placeholder="10-digit" value={f.mobile} onChange={e => setField(idx, 'mobile', e.target.value)} /></label>
+            <label className="text-xs font-medium">Exam Seat No. *<input className="mt-1 border rounded w-full p-2 text-sm" placeholder="SEAT..." value={f.exam_seat_number} onChange={e => setField(idx, 'exam_seat_number', e.target.value)} /></label>
+            <label className="col-span-2 text-xs font-medium">Email *<input className="mt-1 border rounded w-full p-2 text-sm" placeholder="email@college.edu" value={f.email} onChange={e => setField(idx, 'email', e.target.value)} /></label>
+            <label className="col-span-2 text-xs font-medium">Contribution<input className="mt-1 border rounded w-full p-2 text-sm" placeholder="e.g. Backend, Testing" value={f.contribution} onChange={e => setField(idx, 'contribution', e.target.value)} /></label>
+          </div>
         </div>
-      ))}
-      {members.length<4 && <div className="border-2 border-dashed rounded-xl p-4 bg-amber-50">
-        <div className="font-semibold text-sm">Add Member {members.length+1} — Fill directly (no invite)</div>
-        <p className="text-xs text-gray-500">Fill like registration — all fields required. This directly adds the member, no accept needed.</p>
-        <div className="grid grid-cols-2 gap-3 mt-3">
-          <input className="border p-2 rounded text-sm" placeholder="Name *" value={newMember.name} onChange={e=>setNewMember({...newMember, name:e.target.value})} />
-          <input className="border p-2 rounded text-sm" placeholder="Roll No. * " value={newMember.roll_number} onChange={e=>setNewMember({...newMember, roll_number:e.target.value})} />
-          <input className="border p-2 rounded text-sm" placeholder="TE Result *" value={newMember.te_result} onChange={e=>setNewMember({...newMember, te_result:e.target.value})} />
-          <input className="border p-2 rounded text-sm" placeholder="Mobile *" value={newMember.mobile} onChange={e=>setNewMember({...newMember, mobile:e.target.value})} />
-          <input className="border p-2 rounded text-sm" placeholder="Exam Seat No. *" value={newMember.exam_seat_number} onChange={e=>setNewMember({...newMember, exam_seat_number:e.target.value})} />
-          <input className="border p-2 rounded text-sm" placeholder="Email *" value={newMember.email} onChange={e=>setNewMember({...newMember, email:e.target.value})} />
-          <input className="border p-2 rounded text-sm col-span-2" placeholder="Contribution" value={newMember.contribution} onChange={e=>setNewMember({...newMember, contribution:e.target.value})} />
-        </div>
-        <button onClick={addMemberDirect} className="mt-3 bg-blue-600 text-white px-6 py-2 rounded w-full">Add Member Directly</button>
-      </div>}
-      {members.length>=4 && <div className="text-sm text-green-600 bg-green-50 p-3 rounded">Exactly 4 members — ready to submit. Other levels will unlock after undertaking acknowledged and submitted.</div>}
+      })}
     </div>
 
-    <div className="bg-white p-4 rounded-xl border mt-6">
-      <h3 className="font-semibold">Undertaking</h3>
-      <p className="text-xs text-gray-500">We, the students of B.E. Computer Engineering hereby assure project "{group.project?.title}" is our work. Each member must individually acknowledge (not on behalf).</p>
-      <button onClick={acknowledge} className="mt-3 bg-green-600 text-white px-6 py-2 rounded">I Acknowledge — Digitally</button>
-      <button onClick={submit} className="ml-3 bg-blue-600 text-white px-6 py-2 rounded">Submit for Verification — unlock other levels</button>
-      <div className="text-xs text-gray-500 mt-2">Until submitted, DRAFT editable. After submit → SUBMITTED → Guide/HOD notified → AccessGrant → other levels lock open.</div>
+    <div className="bg-white border rounded-xl p-4 mt-6 flex flex-wrap gap-3">
+      <button onClick={saveAll} disabled={saving} className="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50">{saving ? 'Saving...' : 'Save All Members'}</button>
+      <button onClick={acknowledge} className="border px-6 py-2.5 rounded-lg text-sm">I Acknowledge</button>
+      <button onClick={submit} disabled={filled !== 4 || !allAcknowledged} className="bg-green-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed" title={filled !== 4 ? 'Need 4 members' : !allAcknowledged ? 'All members must acknowledge' : ''}>Submit for Verification</button>
+      <span className="text-xs text-gray-400 self-center">Save first, then submit. All 4 members need different Roll/Email.</span>
     </div>
-    {msg&&<div className="text-sm p-3 bg-amber-50 text-amber-700 rounded mt-4">{msg}</div>}
+
+    {msg && <div className="mt-4 text-sm p-3 rounded-xl bg-amber-50 border text-amber-800">{msg}</div>}
+
+    <div className="bg-gray-50 border rounded-xl p-4 mt-4 text-xs text-gray-500">
+      <b>How it works:</b> One group member fills all 4 cards here and clicks Save All — no invite needed. Each member's login email is set from the Email field. After all 4 acknowledge (each member logs in once to click I Acknowledge), Submit unlocks other stages.
+    </div>
   </div>
 }

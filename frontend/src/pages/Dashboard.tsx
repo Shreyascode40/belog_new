@@ -151,6 +151,13 @@ export default function Dashboard(){
     return <div>
       <h1 className="text-2xl font-bold">Student Dashboard</h1>
       <div className="bg-white p-4 rounded-xl border mt-6">
+        <div className="grid grid-cols-2 gap-3">
+          <a href="/profile" className="bg-teal-600 text-white p-3 rounded-xl text-center font-semibold">✏️ Edit My Info<br/><span className="text-xs font-normal">My Profile — Name/Roll/Mobile/Seat/Email/Photo</span></a>
+          <a href="/student-info" className="bg-green-600 text-white p-3 rounded-xl text-center font-semibold">👥 Fill Group's 4 Members<br/><span className="text-xs font-normal">Student Section — all 4, different fields, Photo preview</span></a>
+        </div>
+        <div className="text-xs text-gray-500 text-center mt-3">Not filled → NOT_STARTED. Save Draft — you can finish later (Journey stays DRAFT). Save & Continue → Go to Student Info — clearer</div>
+      </div>
+      <div className="bg-white p-4 rounded-xl border mt-6">
         <div className="flex justify-between items-center">
           <div className="text-sm font-semibold">Current Level</div>
           <button onClick={seedStudent} className="bg-indigo-600 text-white px-3 py-1 rounded text-xs">Seed All Info (Sample)</button>

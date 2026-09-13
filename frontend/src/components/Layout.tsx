@@ -27,6 +27,7 @@ export default function Layout(){
       <nav className="flex flex-col gap-2 text-sm">
         <Link className="hover:bg-slate-800 p-2 rounded" to="/">Dashboard</Link>
         {role==='student'&&<Link className="hover:bg-slate-800 p-2 rounded bg-blue-800" to="/create-group">+ Create Group</Link>}
+        <Link className="hover:bg-slate-800 p-2 rounded bg-blue-700 border border-blue-500" to="/group-profile">Group Profile</Link>
         <Link className="hover:bg-slate-800 p-2 rounded" to="/groups">Groups</Link>
         <Link className="hover:bg-slate-800 p-2 rounded" to="/projects">Projects</Link>
         {role==='hod'&&<Link className="hover:bg-slate-800 p-2 rounded bg-indigo-800" to="/hod/groups">HOD — All Groups</Link>}
@@ -35,6 +36,7 @@ export default function Layout(){
         <Link className="hover:bg-slate-800 p-2 rounded" to="/reviews">Reviews</Link>
         <Link className="hover:bg-slate-800 p-2 rounded" to="/documents">Documents</Link>
         {(role==='faculty'||role==='reviewer')&&<Link className="hover:bg-slate-800 p-2 rounded bg-slate-700" to="/faculty/evaluate">Evaluate All Levels</Link>}
+        <Link className="hover:bg-slate-800 p-2 rounded bg-teal-700 border border-teal-500" to="/profile">👤 My Profile — Member Info</Link>
         {role==='hod'&&<Link className="hover:bg-slate-800 p-2 rounded" to="/admin">Admin</Link>}
         <button onClick={()=>setShowNotifs(!showNotifs)} className="relative bg-slate-800 p-2 rounded text-left mt-4">
           🔔 Notifications {notifCount>0&&<span className="bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-full ml-2">{notifCount}</span>}
@@ -50,7 +52,8 @@ export default function Layout(){
         </div>}
       </nav>
       <div className="mt-auto flex flex-col gap-2">
-        <span className="text-xs opacity-70">Role: {role}</span>
+        <span className="text-xs opacity-70">Role: {role} • {localStorage.getItem('email')||''}</span>
+        <Link to="/profile" className="bg-teal-600 p-2 rounded text-sm text-center">👤 My Profile</Link>
         <button onClick={logout} className="bg-red-600 p-2 rounded text-sm">Logout</button>
       </div>
     </aside>
